@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة إدارة السيارات</title>
+
+<style>
+*{box-sizing:border-box;font-family:Segoe UI,Tahoma}
+
+body{
+ margin:0;
+ background:#000;
+ color:white;
+ min-height:100vh;
+}
+
+nav{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:15px 20px;
+ background:#020617;
+}
+
+button{
+ background:linear-gradient(135deg,#1e90ff,#3aa0ff);
+ color:white;
+ border:none;
+ padding:10px 16px;
+ border-radius:14px;
+ cursor:pointer;
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:20px;
+}
+
+/* FORM */
+.form{
+ background:rgba(255,255,255,.08);
+ padding:22px;
+ border-radius:22px;
+ margin-bottom:30px;
+}
+
+.form h3{margin-top:0}
+
+input, textarea{
+ width:100%;
+ padding:12px 14px;
+ margin-top:12px;
+ border-radius:14px;
+ border:none;
+ background:#020617;
+ color:white;
+ font-size:14px;
+}
+
+textarea{resize:none;height:90px}
+
+/* CARS */
+.cars{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+ gap:20px;
+}
+
+.card{
+ background:rgba(255,255,255,.08);
+ border-radius:22px;
+ overflow:hidden;
+ transition:.3s;
+}
+
+.card:hover{transform:translateY(-4px)}
+
+.card img{
+ width:100%;
+ height:180px;
+ object-fit:cover;
+}
+
+.card .info{
+ padding:15px;
+}
+
+.price{
+ color:#3aa0ff;
+ font-weight:bold;
+ margin-top:6px;
+}
+
+.actions{
+ display:flex;
+ gap:10px;
+ margin-top:14px;
+}
+
+.actions button{
+ flex:1;
+ padding:8px;
+ font-size:14px;
+}
+
+.delete{background:#ff4d4d}
+.edit{background:#f59e0b}
+</style>
+</head>
+
+<body>
+
+<nav>
+ <h3>🛠 لوحة إدارة السيارات</h3>
+ <div>
+  <button onclick="goHome()">المعرض</button>
+  <button onclick="logout()">خروج</button>
+ </div>
+</nav>
+
+<div class="container">
+
+ <!-- ADD / EDIT -->
+ <div class="form">
+  <h3 id="formTitle">➕ إضافة سيارة</h3>
+  <input type="file" id="img" accept="image/*">
+  <input id="name" placeholder="اسم السيارة">
+  <input id="price" placeholder="السعر">
+  <textarea id="desc" placeholder="الوصف"></textarea>
+  <button onclick="saveCar()">حفظ</button>
+ </div>
+
+ <!-- CARS -->
+ <div class="cars" id="cars"></div>
+
+</div>
+
+<script>
+/* حماية الأدمن */
+const session = JSON.parse(localStorage.getItem("session"));
+if(!session || session.role !== "admin"){
+ location.href="index.html";
+}
+
+/* بيانات */
+let cars = JSON.parse(localStorage.getItem("cars") || "[]");
+let editIndex = null;
+
+const box = document.getElementById("cars");
+
+/* عرض السيارات */
+function render(){
+ box.innerHTML="";
+ if(!cars.length){
+  box.innerHTML="<p style='opacity:.6'>🚗 لا توجد سيارات</p>";
+  return;
+ }
+
+ cars.forEach((c,i)=>{
+  box.innerHTML+=`
+   <div class="card">
+    <img src="${c.img}">
+    <div class="info">
+     <h4>${c.name}</h4>
+     <p>${c.desc}</p>
+     <div class="price">${c.price}</div>
+     <div class="actions">
+      <button class="edit" onclick="editCar(${i})">تعديل</button>
+      <button class="delete" onclick="deleteCar(${i})">حذف</button>
+     </div>
+    </div>
+   </div>
+  `;
+ });
+}
+
+/* حفظ */
+function saveCar(){
+ const name = document.getElementById("name").value.trim();
+ const price = document.getElementById("price").value.trim();
+ const desc = document.getElementById("desc").value.trim();
+ const imgInput = document.getElementById("img");
+
+ if(!name || !price || !desc){
+  alert("أكمل جميع الحقول");
+  return;
+ }
+
+ if(editIndex === null && !imgInput.files[0]){
+  alert("اختر صورة");
+  return;
+ }
+
+ if(editIndex !== null){
+  cars[editIndex].name = name;
+  cars[editIndex].price = price;
+  cars[editIndex].desc = desc;
+
+  if(imgInput.files[0]){
+   const r = new FileReader();
+   r.onload = ()=>{
+    cars[editIndex].img = r.result;
+    finishSave();
+   };
+   r.readAsDataURL(imgInput.files[0]);
+   return;
+  }
+
+  finishSave();
+ }else{
+  const r = new FileReader();
+  r.onload = ()=>{
+   cars.push({img:r.result,name,price,desc});
+   finishSave();
+  };
+  r.readAsDataURL(imgInput.files[0]);
+ }
+}
+
+function finishSave(){
+ localStorage.setItem("cars",JSON.stringify(cars));
+ resetForm();
+ render();
+}
+
+/* تعديل */
+function editCar(i){
+ const c = cars[i];
+ editIndex = i;
+ formTitle.innerText="✏️ تعديل سيارة";
+ name.value = c.name;
+ price.value = c.price;
+ desc.value = c.desc;
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* حذف */
+function deleteCar(i){
+ if(!confirm("حذف السيارة؟")) return;
+ cars.splice(i,1);
+ localStorage.setItem("cars",JSON.stringify(cars));
+ render();
+}
+
+/* إعادة ضبط */
+function resetForm(){
+ editIndex = null;
+ formTitle.innerText="➕ إضافة سيارة";
+ name.value="";
+ price.value="";
+ desc.value="";
+ img.value="";
+}
+
+/* تنقل */
+function goHome(){ location.href="index.html"; }
+function logout(){
+ localStorage.removeItem("session");
+ location.href="index.html";
+}
+
+/* تشغيل */
+render();
+</script>
+
+</body>
+</html>

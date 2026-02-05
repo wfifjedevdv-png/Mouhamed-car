@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الأدمن</title>
+
+<style>
+:root{
+ --bg:#05070c;--nav:#020617;--card:rgba(255,255,255,.08);
+ --text:#fff;--accent:#1e90ff;--danger:#ff4d4d;--ok:#22c55e
+}
+body.light{
+ --bg:#f4f6fb;--nav:#fff;--card:#fff;--text:#111827
+}
+*{box-sizing:border-box;font-family:Segoe UI,Tahoma}
+body{margin:0;background:var(--bg);color:var(--text);transition:.3s}
+
+/* NAV */
+nav{
+ display:flex;justify-content:space-between;align-items:center;
+ padding:15px 20px;background:var(--nav)
+}
+nav button{
+ margin-left:10px;background:var(--accent);
+ border:none;color:#fff;padding:8px 14px;
+ border-radius:10px;cursor:pointer
+}
+
+/* CONTAINER */
+.container{max-width:1100px;margin:auto;padding:20px}
+
+/* CARD */
+.card{
+ background:var(--card);padding:16px;border-radius:16px;
+ margin-top:12px;display:flex;justify-content:space-between;
+ align-items:center;transition:.3s
+}
+.card:hover{transform:translateY(-2px)}
+
+.email{color:var(--accent);cursor:pointer}
+.role{opacity:.7;font-size:14px}
+
+.badge{
+ background:var(--ok);
+ color:white;
+ padding:4px 10px;
+ border-radius:999px;
+ font-size:12px
+}
+
+.delete-btn{
+ background:transparent;
+ border:none;
+ color:var(--danger);
+ font-size:20px;
+ cursor:pointer;
+ transition:.2s
+}
+.delete-btn:hover{transform:scale(1.2)}
+
+/* LOGS */
+.logs{margin-top:30px}
+.log{
+ background:var(--card);
+ padding:12px 14px;
+ border-radius:12px;
+ margin-top:10px;
+ font-size:14px
+}
+.time{opacity:.6;font-size:12px}
+
+/* MODALS */
+.modal{
+ position:fixed;inset:0;background:rgba(0,0,0,.6);
+ display:none;align-items:center;justify-content:center;
+ z-index:10
+}
+.modal-box{
+ background:var(--card);
+ padding:25px;width:340px;border-radius:18px
+}
+.modal-box button{
+ width:100%;margin-top:10px;padding:10px;
+ border:none;border-radius:10px;cursor:pointer
+}
+.btn-danger{background:var(--danger);color:white}
+.btn-cancel{background:#555;color:white}
+</style>
+</head>
+
+<body>
+
+<nav>
+ <h3>🛠 لوحة الأدمن</h3>
+ <div>
+  <button onclick="toggleTheme()">🌙 / ☀️</button>
+  <button onclick="goCars()">إدارة السيارات</button>
+  <button onclick="logout()">خروج</button>
+ </div>
+</nav>
+
+<div class="container">
+
+ <h2>👥 المستخدمون</h2>
+ <div id="users"></div>
+
+ <div class="logs">
+  <h2>📜 سجل النشاطات</h2>
+  <div id="logs"></div>
+ </div>
+
+</div>
+
+<!-- تفاصيل المستخدم -->
+<div class="modal" id="infoModal">
+ <div class="modal-box">
+  <h3>📄 معلومات المستخدم</h3>
+  <p><b>الاسم:</b> <span id="mName"></span></p>
+  <p><b>الإيميل:</b> <span id="mEmail"></span></p>
+  <p><b>كلمة المرور:</b> <span id="mPass"></span></p>
+  <p><b>الدور:</b> <span id="mRole"></span></p>
+  <button class="btn-cancel" onclick="closeInfo()">إغلاق</button>
+ </div>
+</div>
+
+<!-- تأكيد الحذف -->
+<div class="modal" id="deleteModal">
+ <div class="modal-box">
+  <h3>⚠️ تأكيد الحذف</h3>
+  <p id="deleteText"></p>
+  <button class="btn-danger" onclick="confirmDelete()">حذف</button>
+  <button class="btn-cancel" onclick="closeDelete()">إلغاء</button>
+ </div>
+</div>
+
+<script>
+/* حماية */
+const session=JSON.parse(localStorage.getItem("session"));
+if(!session||session.role!=="admin")location.href="index.html";
+
+/* ثيم */
+function toggleTheme(){
+ document.body.classList.toggle("light");
+ localStorage.setItem("theme",
+  document.body.classList.contains("light")?"light":"dark");
+}
+if(localStorage.getItem("theme")==="light")
+ document.body.classList.add("light");
+
+/* بيانات */
+let users=JSON.parse(localStorage.getItem("users")||"[]");
+let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+let deleteIndex=null;
+
+const box=document.getElementById("users");
+const logBox=document.getElementById("logs");
+
+/* سجل */
+function addLog(text){
+ logs.unshift({text,time:new Date().toLocaleString("ar")});
+ localStorage.setItem("logs",JSON.stringify(logs));
+ renderLogs();
+}
+
+/* عرض المستخدمين */
+function renderUsers(){
+ box.innerHTML="";
+ users.forEach((u,i)=>{
+  box.innerHTML+=`
+   <div class="card">
+    <div>
+     <div class="email" onclick="showInfo(${i})">${u.email}</div>
+     <div class="role">${u.role}</div>
+    </div>
+    ${
+     u.role==="admin"
+     ? `<span class="badge">👑 أدمن</span>`
+     : `<button class="delete-btn" onclick="askDelete(${i})">🗑</button>`
+    }
+   </div>`;
+ });
+}
+
+/* عرض السجل */
+function renderLogs(){
+ logBox.innerHTML="";
+ if(!logs.length){
+  logBox.innerHTML="<p>لا يوجد نشاطات</p>";return;
+ }
+ logs.forEach(l=>{
+  logBox.innerHTML+=`
+   <div class="log">${l.text}
+    <div class="time">${l.time}</div>
+   </div>`;
+ });
+}
+
+/* معلومات */
+function showInfo(i){
+ const u=users[i];
+ mName.innerText=u.name||"-";
+ mEmail.innerText=u.email;
+ mPass.innerText=u.password;
+ mRole.innerText=u.role;
+ infoModal.style.display="flex";
+}
+function closeInfo(){infoModal.style.display="none";}
+
+/* حذف */
+function askDelete(i){
+ deleteIndex=i;
+ deleteText.innerText=`هل تريد حذف المستخدم ${users[i].email}؟`;
+ deleteModal.style.display="flex";
+}
+function closeDelete(){
+ deleteModal.style.display="none";
+ deleteIndex=null;
+}
+function confirmDelete(){
+ addLog(`🗑 حذف المستخدم ${users[deleteIndex].email}`);
+ users.splice(deleteIndex,1);
+ localStorage.setItem("users",JSON.stringify(users));
+ closeDelete();
+ renderUsers();
+}
+
+/* تنقل */
+function goCars(){
+ addLog("🚗 الدخول إلى إدارة السيارات");
+ location.href="admin-cars.html";
+}
+function logout(){
+ addLog("🚪 تسجيل خروج الأدمن");
+ localStorage.removeItem("session");
+ location.href="index.html";
+}
+
+/* بدء */
+addLog("✅ دخول الأدمن");
+renderUsers();
+renderLogs();
+</script>
+
+</body>
+</html>

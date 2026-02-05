@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تفاصيل السيارة</title>
+
+<style>
+:root{
+ --bg1:#05070c;
+ --bg2:#0b0f17;
+ --blue:#1e90ff;
+ --glass:rgba(255,255,255,.1);
+ --border:rgba(255,255,255,.2);
+}
+
+*{box-sizing:border-box;font-family:Segoe UI,Tahoma}
+
+body{
+ margin:0;
+ min-height:100vh;
+ background:linear-gradient(180deg,var(--bg1),var(--bg2));
+ color:white;
+}
+
+.container{
+ max-width:900px;
+ margin:auto;
+ padding:20px;
+}
+
+.back{
+ background:none;
+ border:none;
+ color:var(--blue);
+ cursor:pointer;
+ font-size:16px;
+ margin-bottom:14px;
+}
+
+.card{
+ background:var(--glass);
+ backdrop-filter:blur(14px);
+ border-radius:26px;
+ padding:18px;
+ border:1px solid var(--border);
+}
+
+.card img{
+ width:100%;
+ height:360px;
+ object-fit:cover;
+ border-radius:22px;
+}
+
+h2{margin:14px 0 6px}
+
+.price{
+ color:var(--blue);
+ font-size:22px;
+ font-weight:bold;
+ margin-bottom:10px;
+}
+
+.desc{opacity:.9;line-height:1.7}
+
+/* ⭐ STARS */
+.stars span{
+ font-size:30px;
+ cursor:pointer;
+ color:#555;
+ transition:.2s;
+}
+.stars span.active,
+.stars span:hover{color:gold}
+
+.avg{margin-top:6px;color:#ccc}
+
+/* 💬 COMMENTS */
+.comment{
+ background:rgba(255,255,255,.08);
+ padding:12px;
+ border-radius:14px;
+ margin-top:10px;
+ border:1px solid var(--border);
+}
+
+.comment small{color:#aaa}
+
+input,textarea,button{
+ width:100%;
+ margin-top:12px;
+ padding:12px;
+ border-radius:14px;
+ border:none;
+ background:#0f1420;
+ color:white;
+}
+
+textarea{resize:none;height:90px}
+
+button.send{
+ background:linear-gradient(135deg,#1e90ff,#3aa0ff);
+ font-weight:600;
+ cursor:pointer;
+}
+
+.empty{opacity:.6;text-align:center;margin-top:10px}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<button class="back" onclick="goBack()">⬅ الرجوع للمعرض</button>
+
+<div class="card" id="card" style="display:none">
+ <img id="img">
+ <h2 id="name"></h2>
+ <div class="price" id="price"></div>
+ <div class="desc" id="desc"></div>
+
+ <hr style="opacity:.2">
+
+ <h3>⭐ التقييم</h3>
+ <div class="stars" id="stars"></div>
+ <div class="avg" id="avg"></div>
+
+ <hr style="opacity:.2">
+
+ <h3>💬 التعليقات</h3>
+ <input id="cname" placeholder="اسمك">
+ <textarea id="ctext" placeholder="اكتب تعليقك"></textarea>
+ <button class="send" onclick="addComment()">إرسال</button>
+
+ <div id="comments"></div>
+</div>
+
+</div>
+
+<script>
+/* حماية الدخول */
+if(!localStorage.getItem("session")){
+ location.href="index.html";
+}
+
+/* جلب البيانات */
+const cars = JSON.parse(localStorage.getItem("cars") || "[]");
+const i = localStorage.getItem("currentCar");
+
+/* تحقق */
+if(!cars.length || i === null || !cars[i]){
+ document.body.innerHTML = `
+  <h2 style="text-align:center;margin-top:80px">
+   🚫 لا توجد سيارة محددة
+  </h2>
+ `;
+ throw "";
+}
+
+const car = cars[i];
+car.comments ||= [];
+car.rates ||= [];
+
+/* عرض البيانات */
+card.style.display="block";
+img.src = car.img;
+name.innerText = car.name;
+price.innerText = car.price;
+desc.innerText = car.desc;
+
+/* ⭐ النجوم */
+for(let x=1;x<=5;x++){
+ stars.innerHTML += `<span onclick="rate(${x})">★</span>`;
+}
+updateStars();
+
+function rate(n){
+ car.rates.push(n);
+ save();
+ updateStars();
+}
+
+function updateStars(){
+ let avgNum = car.rates.length
+ ? (car.rates.reduce((a,b)=>a+b)/car.rates.length)
+ : 0;
+
+ avg.innerText = car.rates.length
+ ? `متوسط التقييم: ${avgNum.toFixed(1)} ⭐`
+ : "لا يوجد تقييم بعد";
+
+ [...stars.children].forEach((s,i)=>{
+  s.classList.toggle("active", i < Math.round(avgNum));
+ });
+}
+
+/* 💬 التعليقات */
+function renderComments(){
+ comments.innerHTML="";
+ if(!car.comments.length){
+  comments.innerHTML="<div class='empty'>لا توجد تعليقات</div>";
+  return;
+ }
+ car.comments.forEach(c=>{
+  comments.innerHTML+=`
+   <div class="comment">
+    <b>${c.name}</b>
+    <small> • ${c.time}</small>
+    <p>${c.text}</p>
+   </div>`;
+ });
+}
+
+function addComment(){
+ if(!cname.value.trim() || !ctext.value.trim()){
+  alert("املأ جميع الحقول");
+  return;
+ }
+ car.comments.push({
+  name:cname.value,
+  text:ctext.value,
+  time:new Date().toLocaleString()
+ });
+ cname.value="";
+ ctext.value="";
+ save();
+ renderComments();
+}
+
+function save(){
+ localStorage.setItem("cars",JSON.stringify(cars));
+}
+
+renderComments();
+
+/* رجوع */
+function goBack(){
+ localStorage.removeItem("currentCar");
+ location.href="gallery.html";
+}
+</script>
+
+</body>
+</html>

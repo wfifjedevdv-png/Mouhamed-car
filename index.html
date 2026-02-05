@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mouhamed Motors</title>
+
+<style>
+body{
+  margin:0;
+  background:#000;
+  color:white;
+  font-family:Segoe UI,Tahoma;
+}
+
+/* LOGIN */
+#login{
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ height:100vh;
+}
+
+.login-box{
+ background:rgba(255,255,255,.08);
+ padding:32px;
+ width:340px;
+ border-radius:24px;
+ text-align:center;
+}
+
+.login-box.admin{
+ border:1px solid rgba(58,160,255,.35);
+ box-shadow:0 0 35px rgba(58,160,255,.25);
+}
+
+input{
+ width:100%;
+ padding:13px 14px;
+ margin-top:14px;
+ border-radius:14px;
+ border:1px solid rgba(255,255,255,.08);
+ background:#020617;
+ color:white;
+ font-size:15px;
+}
+
+button{
+ width:100%;
+ padding:13px;
+ margin-top:18px;
+ border:none;
+ border-radius:14px;
+ background:linear-gradient(135deg,#1e90ff,#3aa0ff);
+ color:white;
+ font-size:16px;
+ cursor:pointer;
+}
+
+.link{
+ margin-top:14px;
+ color:#3aa0ff;
+ cursor:pointer;
+ font-size:14px;
+}
+
+#error{
+ color:#ff6b6b;
+ margin-top:12px;
+ display:none;
+}
+
+/* NAV */
+nav{
+ display:none;
+ justify-content:space-between;
+ align-items:center;
+ padding:15px 20px;
+ background:#020617;
+}
+
+/* CONTENT */
+#content{
+ display:none;
+ padding:20px;
+ max-width:1200px;
+ margin:auto;
+}
+
+.search{
+ margin-bottom:20px;
+ width:100%;
+ padding:12px;
+ border-radius:14px;
+ border:none;
+ background:#111827;
+ color:white;
+}
+
+.cars{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+ gap:20px;
+}
+
+.car{
+ background:rgba(255,255,255,.08);
+ border-radius:20px;
+ overflow:hidden;
+ cursor:pointer;
+ transition:.3s;
+}
+
+.car:hover{ transform:translateY(-5px); }
+
+.car img{
+ width:100%;
+ height:180px;
+ object-fit:cover;
+}
+
+.car .info{ padding:15px; }
+.price{ color:#3aa0ff; font-weight:bold; }
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+ <div class="login-box" id="loginBox">
+  <h2 id="formTitle">🔐 تسجيل الدخول</h2>
+
+  <input id="name" placeholder="اسمك" style="display:none">
+  <input id="email" placeholder="البريد الإلكتروني">
+  <input id="password" type="password" placeholder="كلمة المرور">
+
+  <button onclick="submitForm()">دخول</button>
+
+  <div class="link" onclick="toggleForm()">إنشاء حساب جديد</div>
+  <div id="error"></div>
+ </div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+ <h3>🚗 Mouhamed Motors</h3>
+ <button onclick="logout()" style="width:auto;padding:8px 16px">خروج</button>
+</nav>
+
+<!-- CONTENT -->
+<div id="content">
+ <input class="search" id="search" placeholder="🔍 ابحث عن سيارة" oninput="renderCars()">
+ <div class="cars" id="cars"></div>
+</div>
+
+<script>
+/* أدمن */
+const ADMIN_USER = "mouhamed";
+const ADMIN_PASS = "Lm2007tt";
+
+/* عناصر */
+const loginBox = document.getElementById("login");
+const nav = document.getElementById("nav");
+const content = document.getElementById("content");
+const error = document.getElementById("error");
+
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const passInput = document.getElementById("password");
+const formTitle = document.getElementById("formTitle");
+
+let isRegister = false;
+
+/* مستخدمين */
+let users = JSON.parse(localStorage.getItem("users") || "[]");
+
+/* تبديل */
+function toggleForm(){
+ isRegister = !isRegister;
+ formTitle.innerText = isRegister ? "🆕 إنشاء حساب" : "🔐 تسجيل الدخول";
+ nameInput.style.display = isRegister ? "block" : "none";
+ error.style.display="none";
+}
+
+/* إرسال */
+function submitForm(){
+ const email = emailInput.value.trim();
+ const pass = passInput.value.trim();
+ const name = nameInput.value.trim();
+
+ if(!email || !pass || (isRegister && !name)){
+  showError("أكمل جميع الحقول");
+  return;
+ }
+
+ /* أدمن */
+ if(!isRegister && email===ADMIN_USER && pass===ADMIN_PASS){
+  localStorage.setItem("session", JSON.stringify({role:"admin"}));
+  location.href="admin.html";
+  return;
+ }
+
+ if(isRegister){
+  if(users.find(u=>u.email===email)){
+   showError("الإيميل مستخدم");
+   return;
+  }
+  users.push({name,email,password:pass,role:"user"});
+  localStorage.setItem("users",JSON.stringify(users));
+ }
+
+ const user = users.find(u=>u.email===email && u.password===pass);
+ if(!user){
+  showError("بيانات غير صحيحة");
+  return;
+ }
+
+ localStorage.setItem("session", JSON.stringify(user));
+ start();
+}
+
+/* بدء */
+function start(){
+ const session = JSON.parse(localStorage.getItem("session"));
+ if(!session) return;
+
+ loginBox.style.display="none";
+ nav.style.display="flex";
+ content.style.display="block";
+ renderCars();
+}
+
+/* خروج */
+function logout(){
+ localStorage.removeItem("session");
+ location.reload();
+}
+
+/* ✅ عرض السيارات (الحل النهائي) */
+function renderCars(){
+ const q = document.getElementById("search").value.toLowerCase();
+ const box = document.getElementById("cars");
+
+ // إعادة قراءة السيارات دائمًا
+ const cars = JSON.parse(localStorage.getItem("cars") || "[]");
+
+ box.innerHTML="";
+
+ if(!cars.length){
+  box.innerHTML="<p style='opacity:.6'>🚗 لا توجد سيارات بعد</p>";
+  return;
+ }
+
+ cars
+ .filter(c=>c.name.toLowerCase().includes(q))
+ .forEach((c,i)=>{
+  box.innerHTML+=`
+   <div class="car" onclick="openCar(${i})">
+    <img src="${c.img}">
+    <div class="info">
+     <h4>${c.name}</h4>
+     <p>${c.desc || ""}</p>
+     <div class="price">${c.price}</div>
+    </div>
+   </div>`;
+ });
+}
+
+/* فتح سيارة */
+function openCar(i){
+ localStorage.setItem("currentCar",i);
+ location.href="car.html";
+}
+
+function showError(t){
+ error.innerText=t;
+ error.style.display="block";
+}
+
+/* تشغيل */
+start();
+</script>
+
+</body>
+</html>
