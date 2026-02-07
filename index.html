@@ -6,74 +6,89 @@
 <title>Mouhamed Motors</title>
 
 <style>
-body{
- margin:0;
- background:#000;
- color:white;
- font-family:Segoe UI,Tahoma;
-}
-nav{
- display:flex;
- justify-content:space-between;
- align-items:center;
- padding:15px 20px;
- background:#020617;
-}
-.cars{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
- gap:20px;
- padding:20px;
-}
-.card{
- background:rgba(255,255,255,.08);
- border-radius:20px;
- overflow:hidden;
- cursor:pointer;
-}
-.card img{
- width:100%;
- height:180px;
- object-fit:cover;
-}
-.info{padding:14px}
+body{margin:0;background:#000;color:white;font-family:Segoe UI,Tahoma}
+#login{display:flex;justify-content:center;align-items:center;height:100vh}
+.login-box{background:rgba(255,255,255,.08);padding:32px;width:340px;border-radius:24px;text-align:center}
+input{width:100%;padding:13px;margin-top:14px;border-radius:14px;border:none;background:#020617;color:white}
+button{width:100%;padding:13px;margin-top:18px;border:none;border-radius:14px;background:linear-gradient(135deg,#1e90ff,#3aa0ff);color:white}
+nav{display:none;justify-content:space-between;align-items:center;padding:15px 20px;background:#020617}
+#content{display:none;padding:20px;max-width:1200px;margin:auto}
+.cars{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.car{background:rgba(255,255,255,.08);border-radius:20px;overflow:hidden;cursor:pointer}
+.car img{width:100%;height:180px;object-fit:cover}
+.info{padding:15px}
 .price{color:#3aa0ff;font-weight:bold}
+.cart-btn{font-size:22px;cursor:pointer}
 </style>
 </head>
 
 <body>
 
-<nav>
+<div id="login">
+ <div class="login-box">
+  <h3>تسجيل الدخول</h3>
+  <input id="email" placeholder="البريد">
+  <input id="password" type="password" placeholder="كلمة المرور">
+  <button onclick="login()">دخول</button>
+ </div>
+</div>
+
+<nav id="nav">
  <h3>🚗 Mouhamed Motors</h3>
+ <div>
+  <span class="cart-btn" onclick="goCart()">🛒</span>
+  <button onclick="logout()" style="width:auto">خروج</button>
+ </div>
 </nav>
 
-<div class="cars" id="cars"></div>
+<div id="content">
+ <div class="cars" id="cars"></div>
+</div>
 
 <script>
-const carsBox = document.getElementById("cars");
-const cars = JSON.parse(localStorage.getItem("cars") || "[]");
-
-carsBox.innerHTML="";
-if(!cars.length){
- carsBox.innerHTML="<p style='opacity:.6'>لا توجد سيارات</p>";
+function login(){
+ localStorage.setItem("session",JSON.stringify({email:"user"}));
+ start();
 }
 
-cars.forEach((c,i)=>{
- carsBox.innerHTML+=`
-  <div class="card" onclick="openCar(${i})">
-   <img src="${c.img}">
-   <div class="info">
-    <h4>${c.name}</h4>
-    <div class="price">${c.price}</div>
-   </div>
-  </div>
- `;
-});
+function start(){
+ document.getElementById("login").style.display="none";
+ document.getElementById("nav").style.display="flex";
+ document.getElementById("content").style.display="block";
+ renderCars();
+}
 
-function openCar(i){
- localStorage.setItem("currentCar",i);
+function renderCars(){
+ const cars = JSON.parse(localStorage.getItem("cars")||"[]");
+ const box=document.getElementById("cars");
+ box.innerHTML="";
+ cars.forEach(c=>{
+  box.innerHTML+=`
+   <div class="car" onclick="openCar(${c.id})">
+    <img src="${c.img}">
+    <div class="info">
+     <h4>${c.name}</h4>
+     <div class="price">${c.price}</div>
+    </div>
+   </div>`;
+ });
+}
+
+function openCar(id){
+ localStorage.setItem("currentCarId",id);
  location.href="car.html";
 }
+
+function goCart(){
+ location.href="cart.html";
+}
+
+function logout(){
+ localStorage.clear();
+ location.reload();
+}
+
+if(localStorage.getItem("session")) start();
 </script>
 
 </body>
