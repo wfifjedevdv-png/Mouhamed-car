@@ -23,12 +23,10 @@ body{
  color:white;
 }
 
-/* ===== HEADER مثل SHEIN ===== */
+/* ===== HEADER ===== */
 .header{
  position:fixed;
- top:0;
- right:0;
- left:0;
+ top:0; right:0; left:0;
  height:56px;
  background:#020617;
  display:flex;
@@ -63,7 +61,7 @@ body{
  top:56px;
  right:10px;
  width:300px;
- max-height:400px;
+ max-height:420px;
  background:#0b0f17;
  border:1px solid rgba(255,255,255,.15);
  border-radius:18px;
@@ -83,11 +81,6 @@ body{
  height:60px;
  object-fit:cover;
  border-radius:10px;
-}
-
-.cart-item .price{
- color:#3aa0ff;
- font-size:14px;
 }
 
 .container{
@@ -127,14 +120,43 @@ body{
  margin-bottom:10px;
 }
 
-button.send{
+/* ⭐ STARS */
+.stars span{
+ font-size:30px;
+ cursor:pointer;
+ color:#555;
+ transition:.2s;
+}
+.stars span.active,
+.stars span:hover{color:gold}
+
+.avg{margin-top:6px;color:#ccc}
+
+/* 💬 COMMENTS */
+.comment{
+ background:rgba(255,255,255,.08);
+ padding:12px;
+ border-radius:14px;
+ margin-top:10px;
+ border:1px solid var(--border);
+}
+
+.comment small{color:#aaa}
+
+input,textarea,button{
  width:100%;
  margin-top:12px;
  padding:12px;
  border-radius:14px;
  border:none;
- background:linear-gradient(135deg,#1e90ff,#3aa0ff);
+ background:#0f1420;
  color:white;
+}
+
+textarea{resize:none;height:90px}
+
+button.send{
+ background:linear-gradient(135deg,#1e90ff,#3aa0ff);
  font-weight:600;
  cursor:pointer;
 }
@@ -146,15 +168,14 @@ button.send{
 <!-- HEADER -->
 <div class="header">
  <h3>🚗 معرض السيارات</h3>
- <div class="cart-btn" onclick="toggleCart()">
-  🛒
+ <div class="cart-btn" onclick="toggleCart()">🛒
   <span class="cart-count" id="cartCount">0</span>
  </div>
 </div>
 
 <!-- CART PANEL -->
 <div class="cart-panel" id="cartPanel">
- <h4 style="margin:0 0 10px">عربة التسوق</h4>
+ <h4>🛒 عربة التسوق</h4>
  <div id="cartList"></div>
 </div>
 
@@ -165,9 +186,24 @@ button.send{
  <img id="img">
  <h2 id="name"></h2>
  <div class="price" id="price"></div>
- <p id="desc"></p>
+ <div id="desc"></div>
 
  <button class="send" onclick="addToCart()">🛒 إضافة إلى العربة</button>
+
+ <hr style="opacity:.2">
+
+ <h3>⭐ التقييم</h3>
+ <div class="stars" id="stars"></div>
+ <div class="avg" id="avg"></div>
+
+ <hr style="opacity:.2">
+
+ <h3>💬 التعليقات</h3>
+ <input id="cname" placeholder="اسمك">
+ <textarea id="ctext" placeholder="اكتب تعليقك"></textarea>
+ <button class="send" onclick="addComment()">إرسال</button>
+
+ <div id="comments"></div>
 </div>
 </div>
 
@@ -178,31 +214,86 @@ const cars = JSON.parse(localStorage.getItem("cars")||"[]");
 const i = localStorage.getItem("currentCar");
 const car = cars[i];
 
+car.comments ||= [];
+car.rates ||= [];
+
 img.src=car.img;
 name.innerText=car.name;
 price.innerText=car.price;
 desc.innerText=car.desc;
 
+/* ⭐ تقييم */
+for(let x=1;x<=5;x++){
+ stars.innerHTML+=`<span onclick="rate(${x})">★</span>`;
+}
+updateStars();
+
+function rate(n){
+ car.rates.push(n);
+ save();
+ updateStars();
+}
+
+function updateStars(){
+ let avgNum=car.rates.length
+ ?car.rates.reduce((a,b)=>a+b)/car.rates.length:0;
+ avg.innerText=car.rates.length
+ ?`متوسط التقييم: ${avgNum.toFixed(1)} ⭐`
+ :"لا يوجد تقييم";
+ [...stars.children].forEach((s,i)=>{
+  s.classList.toggle("active",i<Math.round(avgNum));
+ });
+}
+
+/* 💬 تعليقات */
+function renderComments(){
+ comments.innerHTML="";
+ if(!car.comments.length){
+  comments.innerHTML="<p style='opacity:.6'>لا توجد تعليقات</p>";
+  return;
+ }
+ car.comments.forEach(c=>{
+  comments.innerHTML+=`
+   <div class="comment">
+    <b>${c.name}</b>
+    <small> • ${c.time}</small>
+    <p>${c.text}</p>
+   </div>`;
+ });
+}
+
+function addComment(){
+ if(!cname.value||!ctext.value) return;
+ car.comments.push({
+  name:cname.value,
+  text:ctext.value,
+  time:new Date().toLocaleString()
+ });
+ cname.value=""; ctext.value="";
+ save(); renderComments();
+}
+
+/* 🛒 العربة */
 function cartKey(){
  return "cart_"+JSON.parse(localStorage.getItem("session")).email;
 }
 
 function addToCart(){
- const key=cartKey();
- const cart=JSON.parse(localStorage.getItem(key)||"[]");
- cart.push(car);
- localStorage.setItem(key,JSON.stringify(cart));
+ let cart=JSON.parse(localStorage.getItem(cartKey())||"[]");
+ if(cart.find(x=>x.name===car.name)) return alert("موجودة مسبقًا");
+ cart.push({name:car.name,price:car.price,img:car.img});
+ localStorage.setItem(cartKey(),JSON.stringify(cart));
  updateCart();
 }
 
 function toggleCart(){
- const p=document.getElementById("cartPanel");
- p.style.display=p.style.display==="block"?"none":"block";
+ cartPanel.style.display=
+ cartPanel.style.display==="block"?"none":"block";
  updateCart();
 }
 
 function updateCart(){
- const cart=JSON.parse(localStorage.getItem(cartKey())||"[]");
+ let cart=JSON.parse(localStorage.getItem(cartKey())||"[]");
  cartCount.innerText=cart.length;
  cartList.innerHTML="";
  if(!cart.length){
@@ -221,6 +312,11 @@ function updateCart(){
  });
 }
 
+function save(){
+ localStorage.setItem("cars",JSON.stringify(cars));
+}
+
+renderComments();
 updateCart();
 
 function goBack(){
