@@ -106,10 +106,69 @@ button.send{
 }
 
 .empty{opacity:.6;text-align:center;margin-top:10px}
+
+/* 🛒 CART ICON */
+#cartIcon{
+ position:fixed;
+ top:18px;
+ left:18px;
+ width:48px;
+ height:48px;
+ border-radius:50%;
+ background:#1e90ff;
+ color:white;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:22px;
+ cursor:pointer;
+ z-index:999;
+}
+
+/* 🛒 CART BOX */
+#cartBox{
+ position:fixed;
+ top:80px;
+ left:18px;
+ width:280px;
+ max-height:380px;
+ overflow:auto;
+ background:#0b0f17;
+ border:1px solid rgba(255,255,255,.15);
+ border-radius:18px;
+ padding:12px;
+ display:none;
+ z-index:999;
+}
+
+.cartItem{
+ display:flex;
+ gap:8px;
+ margin-bottom:10px;
+}
+
+.cartItem img{
+ width:60px;
+ border-radius:10px;
+}
+
+.cartItem .price{
+ color:#3aa0ff;
+ font-size:14px;
+}
 </style>
 </head>
 
 <body>
+
+<!-- 🛒 أيقونة العربة -->
+<div id="cartIcon" onclick="toggleCart()">🛒</div>
+
+<!-- 🛒 نافذة العربة -->
+<div id="cartBox">
+ <h3>🛒 عربة التسوق</h3>
+ <div id="cartList"></div>
+</div>
 
 <div class="container">
 
@@ -121,7 +180,6 @@ button.send{
  <div class="price" id="price"></div>
  <div class="desc" id="desc"></div>
 
- <!-- 🛒 زر الإضافة (مضاف بدون تغيير التصميم) -->
  <button class="send" onclick="addToCart()">🛒 إضافة إلى عربة التسوق</button>
 
  <hr style="opacity:.2">
@@ -143,22 +201,17 @@ button.send{
 </div>
 
 <script>
-/* حماية الدخول */
+/* حماية */
 if(!localStorage.getItem("session")){
  location.href="index.html";
 }
 
-/* جلب البيانات */
+/* بيانات */
 const cars = JSON.parse(localStorage.getItem("cars") || "[]");
 const i = localStorage.getItem("currentCar");
 
-/* تحقق */
 if(!cars.length || i === null || !cars[i]){
- document.body.innerHTML = `
-  <h2 style="text-align:center;margin-top:80px">
-   🚫 لا توجد سيارة محددة
-  </h2>
- `;
+ document.body.innerHTML="<h2 style='text-align:center;margin-top:80px'>🚫 لا توجد سيارة</h2>";
  throw "";
 }
 
@@ -166,14 +219,14 @@ const car = cars[i];
 car.comments ||= [];
 car.rates ||= [];
 
-/* عرض البيانات */
+/* عرض */
 card.style.display="block";
 img.src = car.img;
 name.innerText = car.name;
 price.innerText = car.price;
 desc.innerText = car.desc;
 
-/* 🛒 عربة التسوق */
+/* 🛒 CART */
 function getCartKey(){
  const s = JSON.parse(localStorage.getItem("session"));
  return "cart_" + s.email;
@@ -182,16 +235,42 @@ function getCartKey(){
 function addToCart(){
  const key = getCartKey();
  const cart = JSON.parse(localStorage.getItem(key) || "[]");
-
  cart.push(car);
  localStorage.setItem(key, JSON.stringify(cart));
-
- alert("🛒 تمت إضافة السيارة إلى عربة التسوق");
+ renderCart();
 }
 
-/* ⭐ النجوم */
+function toggleCart(){
+ const box = document.getElementById("cartBox");
+ box.style.display = box.style.display==="block"?"none":"block";
+ renderCart();
+}
+
+function renderCart(){
+ const s = JSON.parse(localStorage.getItem("session"));
+ const cart = JSON.parse(localStorage.getItem("cart_"+s.email) || "[]");
+ const list = document.getElementById("cartList");
+ list.innerHTML="";
+ if(!cart.length){
+  list.innerHTML="<p style='opacity:.6'>العربة فارغة</p>";
+  return;
+ }
+ cart.forEach(c=>{
+  list.innerHTML+=`
+   <div class="cartItem">
+    <img src="${c.img}">
+    <div>
+     <div>${c.name}</div>
+     <div class="price">${c.price}</div>
+    </div>
+   </div>
+  `;
+ });
+}
+
+/* ⭐ Stars */
 for(let x=1;x<=5;x++){
- stars.innerHTML += `<span onclick="rate(${x})">★</span>`;
+ stars.innerHTML+=`<span onclick="rate(${x})">★</span>`;
 }
 updateStars();
 
@@ -202,20 +281,15 @@ function rate(n){
 }
 
 function updateStars(){
- let avgNum = car.rates.length
- ? (car.rates.reduce((a,b)=>a+b)/car.rates.length)
- : 0;
-
- avg.innerText = car.rates.length
- ? `متوسط التقييم: ${avgNum.toFixed(1)} ⭐`
- : "لا يوجد تقييم بعد";
-
+ let avgNum=car.rates.length
+ ?car.rates.reduce((a,b)=>a+b)/car.rates.length:0;
+ avg.innerText=car.rates.length?`متوسط التقييم: ${avgNum.toFixed(1)} ⭐`:"لا يوجد تقييم";
  [...stars.children].forEach((s,i)=>{
-  s.classList.toggle("active", i < Math.round(avgNum));
+  s.classList.toggle("active",i<Math.round(avgNum));
  });
 }
 
-/* 💬 التعليقات */
+/* 💬 Comments */
 function renderComments(){
  comments.innerHTML="";
  if(!car.comments.length){
@@ -233,19 +307,10 @@ function renderComments(){
 }
 
 function addComment(){
- if(!cname.value.trim() || !ctext.value.trim()){
-  alert("املأ جميع الحقول");
-  return;
- }
- car.comments.push({
-  name:cname.value,
-  text:ctext.value,
-  time:new Date().toLocaleString()
- });
- cname.value="";
- ctext.value="";
- save();
- renderComments();
+ if(!cname.value.trim()||!ctext.value.trim())return alert("أكمل الحقول");
+ car.comments.push({name:cname.value,text:ctext.value,time:new Date().toLocaleString()});
+ cname.value="";ctext.value="";
+ save();renderComments();
 }
 
 function save(){
@@ -254,7 +319,6 @@ function save(){
 
 renderComments();
 
-/* رجوع */
 function goBack(){
  localStorage.removeItem("currentCar");
  location.href="gallery.html";
