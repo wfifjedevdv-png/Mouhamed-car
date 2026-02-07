@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة إدارة السيارات</title>
+<title>إدارة السيارات</title>
 
 <style>
 body{
@@ -12,17 +12,13 @@ body{
  background:#05070c;
  color:white;
 }
-
 header{
  background:#020617;
- padding:14px 16px;
+ padding:14px;
  display:flex;
  justify-content:space-between;
  align-items:center;
 }
-
-header h3{margin:0}
-
 header button{
  background:#1e90ff;
  border:none;
@@ -31,70 +27,38 @@ header button{
  border-radius:12px;
  cursor:pointer;
 }
-
-.container{
- max-width:900px;
- margin:auto;
- padding:20px;
-}
-
+.container{max-width:900px;margin:auto;padding:20px}
 .form{
  background:#0b0f17;
- padding:18px;
- border-radius:20px;
- margin-bottom:30px;
+ padding:16px;
+ border-radius:18px;
+ margin-bottom:24px;
 }
-
 .form input,.form textarea{
  width:100%;
  margin-bottom:10px;
  padding:10px;
  border-radius:12px;
  border:none;
- outline:none;
 }
-
-.form button{
- background:#1e90ff;
- color:white;
- border:none;
- padding:10px 16px;
- border-radius:14px;
- cursor:pointer;
-}
-
 .cards{
  display:grid;
- grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+ grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
  gap:16px;
 }
-
 .card{
  background:#0b0f17;
- border-radius:20px;
+ border-radius:18px;
  overflow:hidden;
 }
-
 .card img{
  width:100%;
- height:160px;
+ height:150px;
  object-fit:cover;
 }
-
-.card .info{
- padding:12px;
-}
-
-.price{
- color:#3aa0ff;
- margin:6px 0;
-}
-
-.actions{
- display:flex;
- gap:8px;
-}
-
+.info{padding:10px}
+.price{color:#3aa0ff}
+.actions{display:flex;gap:6px}
 .actions button{
  flex:1;
  border:none;
@@ -102,9 +66,8 @@ header button{
  border-radius:10px;
  cursor:pointer;
 }
-
+.del{background:#ff4d4d;color:white}
 .edit{background:#ffaa00}
-.delete{background:#ff4d4d;color:white}
 </style>
 </head>
 
@@ -113,7 +76,7 @@ header button{
 <header>
  <h3>🛠️ لوحة إدارة السيارات</h3>
  <div>
-  <button onclick="goHome()">المعرض</button>
+  <button onclick="goGallery()">المعرض</button>
   <button onclick="logout()">خروج</button>
  </div>
 </header>
@@ -121,45 +84,35 @@ header button{
 <div class="container">
 
 <div class="form">
- <h4 id="formTitle">➕ إضافة سيارة</h4>
+ <h4 id="title">➕ إضافة سيارة</h4>
  <input type="file" id="img">
- <input type="text" id="name" placeholder="اسم السيارة">
- <input type="text" id="price" placeholder="السعر">
+ <input id="name" placeholder="اسم السيارة">
+ <input id="price" placeholder="السعر">
  <textarea id="desc" placeholder="الوصف"></textarea>
- <button onclick="saveCar()">حفظ</button>
+ <button onclick="save()">حفظ</button>
 </div>
 
-<div class="cards" id="cars"></div>
+<div class="cards" id="list"></div>
 
 </div>
 
 <script>
-/* حماية الأدمن */
+/* حماية */
 const session = JSON.parse(localStorage.getItem("session"));
-if(!session || session.role !== "admin"){
+if(!session || session.role!=="admin"){
  location.href="index.html";
 }
 
-/* عناصر */
-const imgInput = document.getElementById("img");
-const nameInput = document.getElementById("name");
-const priceInput = document.getElementById("price");
-const descInput = document.getElementById("desc");
-const carsBox = document.getElementById("cars");
-const formTitle = document.getElementById("formTitle");
-
+/* التخزين الموحد */
 let cars = JSON.parse(localStorage.getItem("cars") || "[]");
-let editIndex = null;
+let edit = null;
 
-/* عرض السيارات */
+const list = document.getElementById("list");
+
 function render(){
- carsBox.innerHTML="";
- if(!cars.length){
-  carsBox.innerHTML="<p style='opacity:.6'>لا توجد سيارات</p>";
-  return;
- }
+ list.innerHTML="";
  cars.forEach((c,i)=>{
-  carsBox.innerHTML+=`
+  list.innerHTML += `
    <div class="card">
     <img src="${c.img}">
     <div class="info">
@@ -168,89 +121,84 @@ function render(){
      <p>${c.desc}</p>
      <div class="actions">
       <button class="edit" onclick="editCar(${i})">تعديل</button>
-      <button class="delete" onclick="deleteCar(${i})">حذف</button>
+      <button class="del" onclick="del(${i})">حذف</button>
      </div>
     </div>
-   </div>`;
+   </div>
+  `;
  });
 }
 
-/* حفظ سيارة (✔ مصحّح) */
-function saveCar(){
+function save(){
  const name = nameInput.value.trim();
  const price = priceInput.value.trim();
  const desc = descInput.value.trim();
- const file = imgInput.files[0];
+ const file = img.files[0];
 
  if(!name || !price || !desc){
-  alert("أكمل جميع الحقول");
+  alert("أكمل الحقول");
   return;
  }
 
- const save = (img)=>{
+ const done = (imgSrc)=>{
   const car = {
-   img,
+   img: imgSrc,
    name,
    price,
-   desc,
-   comments:[],
-   rates:[]
+   desc
   };
 
-  if(editIndex !== null){
-   cars[editIndex] = car;
+  if(edit!==null){
+   cars[edit] = car;
   }else{
    cars.push(car);
   }
 
   localStorage.setItem("cars", JSON.stringify(cars));
-  resetForm();
+  reset();
   render();
  };
 
  if(file){
-  const reader = new FileReader();
-  reader.onload = () => save(reader.result);
-  reader.readAsDataURL(file);
- }else if(editIndex !== null){
-  save(cars[editIndex].img);
+  const r = new FileReader();
+  r.onload = ()=>done(r.result);
+  r.readAsDataURL(file);
+ }else if(edit!==null){
+  done(cars[edit].img);
  }
 }
 
-/* تعديل */
 function editCar(i){
- const c = cars[i];
- editIndex = i;
- nameInput.value = c.name;
- priceInput.value = c.price;
- descInput.value = c.desc;
- formTitle.innerText = "✏️ تعديل سيارة";
+ edit=i;
+ const c=cars[i];
+ nameInput.value=c.name;
+ priceInput.value=c.price;
+ descInput.value=c.desc;
+ title.innerText="✏️ تعديل سيارة";
 }
 
-/* حذف */
-function deleteCar(i){
- if(!confirm("حذف السيارة؟")) return;
- cars.splice(i,1);
- localStorage.setItem("cars", JSON.stringify(cars));
- render();
+function del(i){
+ if(confirm("حذف؟")){
+  cars.splice(i,1);
+  localStorage.setItem("cars", JSON.stringify(cars));
+  render();
+ }
 }
 
-/* إعادة */
-function resetForm(){
- editIndex = null;
+function reset(){
+ edit=null;
  nameInput.value="";
  priceInput.value="";
  descInput.value="";
- imgInput.value="";
- formTitle.innerText="➕ إضافة سيارة";
+ img.value="";
+ title.innerText="➕ إضافة سيارة";
 }
 
-/* تنقل */
 function logout(){
  localStorage.removeItem("session");
  location.href="index.html";
 }
-function goHome(){
+function goGallery(){
  location.href="gallery.html";
 }
 
