@@ -23,10 +23,77 @@ body{
  color:white;
 }
 
+/* ===== HEADER مثل SHEIN ===== */
+.header{
+ position:fixed;
+ top:0;
+ right:0;
+ left:0;
+ height:56px;
+ background:#020617;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:0 16px;
+ z-index:1000;
+}
+
+.header h3{margin:0;font-size:18px}
+
+.cart-btn{
+ position:relative;
+ font-size:22px;
+ cursor:pointer;
+}
+
+.cart-count{
+ position:absolute;
+ top:-6px;
+ left:-6px;
+ background:#ff4d4d;
+ color:white;
+ font-size:12px;
+ padding:2px 6px;
+ border-radius:999px;
+}
+
+/* ===== CART PANEL ===== */
+.cart-panel{
+ position:fixed;
+ top:56px;
+ right:10px;
+ width:300px;
+ max-height:400px;
+ background:#0b0f17;
+ border:1px solid rgba(255,255,255,.15);
+ border-radius:18px;
+ padding:12px;
+ display:none;
+ z-index:1000;
+}
+
+.cart-item{
+ display:flex;
+ gap:10px;
+ margin-bottom:10px;
+}
+
+.cart-item img{
+ width:60px;
+ height:60px;
+ object-fit:cover;
+ border-radius:10px;
+}
+
+.cart-item .price{
+ color:#3aa0ff;
+ font-size:14px;
+}
+
 .container{
  max-width:900px;
  margin:auto;
- padding:20px;
+ padding:80px 20px 20px;
 }
 
 .back{
@@ -53,8 +120,6 @@ body{
  border-radius:22px;
 }
 
-h2{margin:14px 0 6px}
-
 .price{
  color:var(--blue);
  font-size:22px;
@@ -62,265 +127,103 @@ h2{margin:14px 0 6px}
  margin-bottom:10px;
 }
 
-.desc{opacity:.9;line-height:1.7}
-
-/* ⭐ STARS */
-.stars span{
- font-size:30px;
- cursor:pointer;
- color:#555;
- transition:.2s;
-}
-.stars span.active,
-.stars span:hover{color:gold}
-
-.avg{margin-top:6px;color:#ccc}
-
-/* 💬 COMMENTS */
-.comment{
- background:rgba(255,255,255,.08);
- padding:12px;
- border-radius:14px;
- margin-top:10px;
- border:1px solid var(--border);
-}
-
-.comment small{color:#aaa}
-
-input,textarea,button{
+button.send{
  width:100%;
  margin-top:12px;
  padding:12px;
  border-radius:14px;
  border:none;
- background:#0f1420;
- color:white;
-}
-
-textarea{resize:none;height:90px}
-
-button.send{
  background:linear-gradient(135deg,#1e90ff,#3aa0ff);
+ color:white;
  font-weight:600;
  cursor:pointer;
-}
-
-.empty{opacity:.6;text-align:center;margin-top:10px}
-
-/* 🛒 CART ICON */
-#cartIcon{
- position:fixed;
- top:18px;
- left:18px;
- width:48px;
- height:48px;
- border-radius:50%;
- background:#1e90ff;
- color:white;
- display:flex;
- align-items:center;
- justify-content:center;
- font-size:22px;
- cursor:pointer;
- z-index:999;
-}
-
-/* 🛒 CART BOX */
-#cartBox{
- position:fixed;
- top:80px;
- left:18px;
- width:280px;
- max-height:380px;
- overflow:auto;
- background:#0b0f17;
- border:1px solid rgba(255,255,255,.15);
- border-radius:18px;
- padding:12px;
- display:none;
- z-index:999;
-}
-
-.cartItem{
- display:flex;
- gap:8px;
- margin-bottom:10px;
-}
-
-.cartItem img{
- width:60px;
- border-radius:10px;
-}
-
-.cartItem .price{
- color:#3aa0ff;
- font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🛒 أيقونة العربة -->
-<div id="cartIcon" onclick="toggleCart()">🛒</div>
+<!-- HEADER -->
+<div class="header">
+ <h3>🚗 معرض السيارات</h3>
+ <div class="cart-btn" onclick="toggleCart()">
+  🛒
+  <span class="cart-count" id="cartCount">0</span>
+ </div>
+</div>
 
-<!-- 🛒 نافذة العربة -->
-<div id="cartBox">
- <h3>🛒 عربة التسوق</h3>
+<!-- CART PANEL -->
+<div class="cart-panel" id="cartPanel">
+ <h4 style="margin:0 0 10px">عربة التسوق</h4>
  <div id="cartList"></div>
 </div>
 
 <div class="container">
+<button class="back" onclick="goBack()">⬅ الرجوع</button>
 
-<button class="back" onclick="goBack()">⬅ الرجوع للمعرض</button>
-
-<div class="card" id="card" style="display:none">
+<div class="card" id="card">
  <img id="img">
  <h2 id="name"></h2>
  <div class="price" id="price"></div>
- <div class="desc" id="desc"></div>
+ <p id="desc"></p>
 
- <button class="send" onclick="addToCart()">🛒 إضافة إلى عربة التسوق</button>
-
- <hr style="opacity:.2">
-
- <h3>⭐ التقييم</h3>
- <div class="stars" id="stars"></div>
- <div class="avg" id="avg"></div>
-
- <hr style="opacity:.2">
-
- <h3>💬 التعليقات</h3>
- <input id="cname" placeholder="اسمك">
- <textarea id="ctext" placeholder="اكتب تعليقك"></textarea>
- <button class="send" onclick="addComment()">إرسال</button>
-
- <div id="comments"></div>
+ <button class="send" onclick="addToCart()">🛒 إضافة إلى العربة</button>
 </div>
-
 </div>
 
 <script>
-/* حماية */
-if(!localStorage.getItem("session")){
- location.href="index.html";
-}
+if(!localStorage.getItem("session")) location.href="index.html";
 
-/* بيانات */
-const cars = JSON.parse(localStorage.getItem("cars") || "[]");
+const cars = JSON.parse(localStorage.getItem("cars")||"[]");
 const i = localStorage.getItem("currentCar");
-
-if(!cars.length || i === null || !cars[i]){
- document.body.innerHTML="<h2 style='text-align:center;margin-top:80px'>🚫 لا توجد سيارة</h2>";
- throw "";
-}
-
 const car = cars[i];
-car.comments ||= [];
-car.rates ||= [];
 
-/* عرض */
-card.style.display="block";
-img.src = car.img;
-name.innerText = car.name;
-price.innerText = car.price;
-desc.innerText = car.desc;
+img.src=car.img;
+name.innerText=car.name;
+price.innerText=car.price;
+desc.innerText=car.desc;
 
-/* 🛒 CART */
-function getCartKey(){
- const s = JSON.parse(localStorage.getItem("session"));
- return "cart_" + s.email;
+function cartKey(){
+ return "cart_"+JSON.parse(localStorage.getItem("session")).email;
 }
 
 function addToCart(){
- const key = getCartKey();
- const cart = JSON.parse(localStorage.getItem(key) || "[]");
+ const key=cartKey();
+ const cart=JSON.parse(localStorage.getItem(key)||"[]");
  cart.push(car);
- localStorage.setItem(key, JSON.stringify(cart));
- renderCart();
+ localStorage.setItem(key,JSON.stringify(cart));
+ updateCart();
 }
 
 function toggleCart(){
- const box = document.getElementById("cartBox");
- box.style.display = box.style.display==="block"?"none":"block";
- renderCart();
+ const p=document.getElementById("cartPanel");
+ p.style.display=p.style.display==="block"?"none":"block";
+ updateCart();
 }
 
-function renderCart(){
- const s = JSON.parse(localStorage.getItem("session"));
- const cart = JSON.parse(localStorage.getItem("cart_"+s.email) || "[]");
- const list = document.getElementById("cartList");
- list.innerHTML="";
+function updateCart(){
+ const cart=JSON.parse(localStorage.getItem(cartKey())||"[]");
+ cartCount.innerText=cart.length;
+ cartList.innerHTML="";
  if(!cart.length){
-  list.innerHTML="<p style='opacity:.6'>العربة فارغة</p>";
+  cartList.innerHTML="<p style='opacity:.6'>العربة فارغة</p>";
   return;
  }
  cart.forEach(c=>{
-  list.innerHTML+=`
-   <div class="cartItem">
+  cartList.innerHTML+=`
+   <div class="cart-item">
     <img src="${c.img}">
     <div>
      <div>${c.name}</div>
      <div class="price">${c.price}</div>
     </div>
-   </div>
-  `;
- });
-}
-
-/* ⭐ Stars */
-for(let x=1;x<=5;x++){
- stars.innerHTML+=`<span onclick="rate(${x})">★</span>`;
-}
-updateStars();
-
-function rate(n){
- car.rates.push(n);
- save();
- updateStars();
-}
-
-function updateStars(){
- let avgNum=car.rates.length
- ?car.rates.reduce((a,b)=>a+b)/car.rates.length:0;
- avg.innerText=car.rates.length?`متوسط التقييم: ${avgNum.toFixed(1)} ⭐`:"لا يوجد تقييم";
- [...stars.children].forEach((s,i)=>{
-  s.classList.toggle("active",i<Math.round(avgNum));
- });
-}
-
-/* 💬 Comments */
-function renderComments(){
- comments.innerHTML="";
- if(!car.comments.length){
-  comments.innerHTML="<div class='empty'>لا توجد تعليقات</div>";
-  return;
- }
- car.comments.forEach(c=>{
-  comments.innerHTML+=`
-   <div class="comment">
-    <b>${c.name}</b>
-    <small> • ${c.time}</small>
-    <p>${c.text}</p>
    </div>`;
  });
 }
 
-function addComment(){
- if(!cname.value.trim()||!ctext.value.trim())return alert("أكمل الحقول");
- car.comments.push({name:cname.value,text:ctext.value,time:new Date().toLocaleString()});
- cname.value="";ctext.value="";
- save();renderComments();
-}
-
-function save(){
- localStorage.setItem("cars",JSON.stringify(cars));
-}
-
-renderComments();
+updateCart();
 
 function goBack(){
- localStorage.removeItem("currentCar");
  location.href="gallery.html";
 }
 </script>
