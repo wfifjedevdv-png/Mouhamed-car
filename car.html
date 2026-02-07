@@ -121,6 +121,9 @@ button.send{
  <div class="price" id="price"></div>
  <div class="desc" id="desc"></div>
 
+ <!-- 🛒 زر الإضافة (مضاف بدون تغيير التصميم) -->
+ <button class="send" onclick="addToCart()">🛒 إضافة إلى عربة التسوق</button>
+
  <hr style="opacity:.2">
 
  <h3>⭐ التقييم</h3>
@@ -169,6 +172,22 @@ img.src = car.img;
 name.innerText = car.name;
 price.innerText = car.price;
 desc.innerText = car.desc;
+
+/* 🛒 عربة التسوق */
+function getCartKey(){
+ const s = JSON.parse(localStorage.getItem("session"));
+ return "cart_" + s.email;
+}
+
+function addToCart(){
+ const key = getCartKey();
+ const cart = JSON.parse(localStorage.getItem(key) || "[]");
+
+ cart.push(car);
+ localStorage.setItem(key, JSON.stringify(cart));
+
+ alert("🛒 تمت إضافة السيارة إلى عربة التسوق");
+}
 
 /* ⭐ النجوم */
 for(let x=1;x<=5;x++){
