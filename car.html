@@ -23,7 +23,7 @@ body{
  color:white;
 }
 
-/* ===== HEADER ===== */
+/* HEADER */
 .header{
  position:fixed;
  top:0; right:0; left:0;
@@ -35,8 +35,6 @@ body{
  padding:0 16px;
  z-index:1000;
 }
-
-.header h3{margin:0;font-size:18px}
 
 .cart-btn{
  position:relative;
@@ -55,15 +53,13 @@ body{
  border-radius:999px;
 }
 
-/* ===== CART PANEL ===== */
+/* CART PANEL */
 .cart-panel{
  position:fixed;
  top:56px;
  right:10px;
  width:300px;
- max-height:420px;
  background:#0b0f17;
- border:1px solid rgba(255,255,255,.15);
  border-radius:18px;
  padding:12px;
  display:none;
@@ -120,28 +116,20 @@ body{
  margin-bottom:10px;
 }
 
-/* ⭐ STARS */
+/* STARS */
 .stars span{
  font-size:30px;
  cursor:pointer;
  color:#555;
- transition:.2s;
 }
-.stars span.active,
-.stars span:hover{color:gold}
+.stars span.active{color:gold}
 
-.avg{margin-top:6px;color:#ccc}
-
-/* 💬 COMMENTS */
 .comment{
  background:rgba(255,255,255,.08);
  padding:12px;
  border-radius:14px;
  margin-top:10px;
- border:1px solid var(--border);
 }
-
-.comment small{color:#aaa}
 
 input,textarea,button{
  width:100%;
@@ -153,11 +141,8 @@ input,textarea,button{
  color:white;
 }
 
-textarea{resize:none;height:90px}
-
 button.send{
  background:linear-gradient(135deg,#1e90ff,#3aa0ff);
- font-weight:600;
  cursor:pointer;
 }
 </style>
@@ -165,7 +150,6 @@ button.send{
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
  <h3>🚗 معرض السيارات</h3>
  <div class="cart-btn" onclick="toggleCart()">🛒
@@ -173,7 +157,6 @@ button.send{
  </div>
 </div>
 
-<!-- CART PANEL -->
 <div class="cart-panel" id="cartPanel">
  <h4>🛒 عربة التسوق</h4>
  <div id="cartList"></div>
@@ -182,11 +165,11 @@ button.send{
 <div class="container">
 <button class="back" onclick="goBack()">⬅ الرجوع</button>
 
-<div class="card" id="card">
+<div class="card">
  <img id="img">
  <h2 id="name"></h2>
  <div class="price" id="price"></div>
- <div id="desc"></div>
+ <p id="desc"></p>
 
  <button class="send" onclick="addToCart()">🛒 إضافة إلى العربة</button>
 
@@ -194,7 +177,7 @@ button.send{
 
  <h3>⭐ التقييم</h3>
  <div class="stars" id="stars"></div>
- <div class="avg" id="avg"></div>
+ <div id="avg"></div>
 
  <hr style="opacity:.2">
 
@@ -202,7 +185,6 @@ button.send{
  <input id="cname" placeholder="اسمك">
  <textarea id="ctext" placeholder="اكتب تعليقك"></textarea>
  <button class="send" onclick="addComment()">إرسال</button>
-
  <div id="comments"></div>
 </div>
 </div>
@@ -217,14 +199,14 @@ const car = cars[i];
 car.comments ||= [];
 car.rates ||= [];
 
-img.src=car.img;
-name.innerText=car.name;
-price.innerText=car.price;
-desc.innerText=car.desc;
+img.src = car.img;
+name.innerText = car.name;
+price.innerText = car.price;
+desc.innerText = car.desc;
 
-/* ⭐ تقييم */
+/* ⭐ التقييم */
 for(let x=1;x<=5;x++){
- stars.innerHTML+=`<span onclick="rate(${x})">★</span>`;
+ stars.innerHTML += `<span onclick="rate(${x})">★</span>`;
 }
 updateStars();
 
@@ -235,13 +217,11 @@ function rate(n){
 }
 
 function updateStars(){
- let avgNum=car.rates.length
- ?car.rates.reduce((a,b)=>a+b)/car.rates.length:0;
- avg.innerText=car.rates.length
- ?`متوسط التقييم: ${avgNum.toFixed(1)} ⭐`
- :"لا يوجد تقييم";
+ let avgNum = car.rates.length
+ ? car.rates.reduce((a,b)=>a+b)/car.rates.length : 0;
+ avg.innerText = avgNum ? `متوسط التقييم ${avgNum.toFixed(1)} ⭐` : "لا يوجد تقييم";
  [...stars.children].forEach((s,i)=>{
-  s.classList.toggle("active",i<Math.round(avgNum));
+  s.classList.toggle("active", i < Math.round(avgNum));
  });
 }
 
@@ -279,22 +259,27 @@ function cartKey(){
 }
 
 function addToCart(){
- let cart=JSON.parse(localStorage.getItem(cartKey())||"[]");
- if(cart.find(x=>x.name===car.name)) return alert("موجودة مسبقًا");
- cart.push({name:car.name,price:car.price,img:car.img});
+ let cart = JSON.parse(localStorage.getItem(cartKey())||"[]");
+ if(cart.find(x=>x.id==i)) return alert("🚫 موجودة مسبقًا");
+ cart.push({
+  id:i,
+  name:car.name,
+  price:car.price,
+  img:car.img
+ });
  localStorage.setItem(cartKey(),JSON.stringify(cart));
  updateCart();
 }
 
 function toggleCart(){
- cartPanel.style.display=
+ cartPanel.style.display =
  cartPanel.style.display==="block"?"none":"block";
  updateCart();
 }
 
 function updateCart(){
- let cart=JSON.parse(localStorage.getItem(cartKey())||"[]");
- cartCount.innerText=cart.length;
+ let cart = JSON.parse(localStorage.getItem(cartKey())||"[]");
+ cartCount.innerText = cart.length;
  cartList.innerHTML="";
  if(!cart.length){
   cartList.innerHTML="<p style='opacity:.6'>العربة فارغة</p>";
