@@ -6,25 +6,56 @@
 <title>لوحة إدارة السيارات</title>
 
 <style>
-*{box-sizing:border-box;font-family:Segoe UI,Tahoma}
-
 body{
  margin:0;
- background:#000;
+ font-family:Segoe UI,Tahoma;
+ background:#05070c;
  color:white;
- min-height:100vh;
 }
 
-nav{
+header{
+ background:#020617;
+ padding:14px 16px;
  display:flex;
  justify-content:space-between;
  align-items:center;
- padding:15px 20px;
- background:#020617;
 }
 
-button{
- background:linear-gradient(135deg,#1e90ff,#3aa0ff);
+header h3{margin:0}
+
+header button{
+ background:#1e90ff;
+ border:none;
+ color:white;
+ padding:8px 14px;
+ border-radius:12px;
+ cursor:pointer;
+}
+
+.container{
+ max-width:900px;
+ margin:auto;
+ padding:20px;
+}
+
+.form{
+ background:#0b0f17;
+ padding:18px;
+ border-radius:20px;
+ margin-bottom:30px;
+}
+
+.form input,.form textarea{
+ width:100%;
+ margin-bottom:10px;
+ padding:10px;
+ border-radius:12px;
+ border:none;
+ outline:none;
+}
+
+.form button{
+ background:#1e90ff;
  color:white;
  border:none;
  padding:10px 16px;
@@ -32,109 +63,109 @@ button{
  cursor:pointer;
 }
 
-.container{
- max-width:1100px;
- margin:auto;
- padding:20px;
-}
-
-.form{
- background:rgba(255,255,255,.08);
- padding:22px;
- border-radius:22px;
- margin-bottom:30px;
-}
-
-input, textarea{
- width:100%;
- padding:12px 14px;
- margin-top:12px;
- border-radius:14px;
- border:none;
- background:#020617;
- color:white;
-}
-
-.cars{
+.cards{
  display:grid;
- grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
- gap:20px;
+ grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+ gap:16px;
 }
 
 .card{
- background:rgba(255,255,255,.08);
- border-radius:22px;
+ background:#0b0f17;
+ border-radius:20px;
  overflow:hidden;
 }
 
 .card img{
  width:100%;
- height:180px;
+ height:160px;
  object-fit:cover;
 }
 
-.card .info{padding:15px}
-.price{color:#3aa0ff;font-weight:bold}
+.card .info{
+ padding:12px;
+}
+
+.price{
+ color:#3aa0ff;
+ margin:6px 0;
+}
 
 .actions{
  display:flex;
- gap:10px;
- margin-top:14px;
+ gap:8px;
 }
 
-.delete{background:#ff4d4d}
-.edit{background:#f59e0b}
+.actions button{
+ flex:1;
+ border:none;
+ padding:6px;
+ border-radius:10px;
+ cursor:pointer;
+}
+
+.edit{background:#ffaa00}
+.delete{background:#ff4d4d;color:white}
 </style>
 </head>
 
 <body>
 
-<nav>
- <h3>🛠 لوحة إدارة السيارات</h3>
+<header>
+ <h3>🛠️ لوحة إدارة السيارات</h3>
  <div>
   <button onclick="goHome()">المعرض</button>
   <button onclick="logout()">خروج</button>
  </div>
-</nav>
+</header>
 
 <div class="container">
 
 <div class="form">
- <h3 id="formTitle">➕ إضافة سيارة</h3>
- <input type="file" id="img" accept="image/*">
- <input id="name" placeholder="اسم السيارة">
- <input id="price" placeholder="السعر">
+ <h4 id="formTitle">➕ إضافة سيارة</h4>
+ <input type="file" id="img">
+ <input type="text" id="name" placeholder="اسم السيارة">
+ <input type="text" id="price" placeholder="السعر">
  <textarea id="desc" placeholder="الوصف"></textarea>
  <button onclick="saveCar()">حفظ</button>
 </div>
 
-<div class="cars" id="cars"></div>
+<div class="cards" id="cars"></div>
 
 </div>
 
 <script>
+/* حماية الأدمن */
 const session = JSON.parse(localStorage.getItem("session"));
-if(!session || session.role!=="admin") location.href="index.html";
+if(!session || session.role !== "admin"){
+ location.href="index.html";
+}
 
-let cars = JSON.parse(localStorage.getItem("cars")||"[]");
-let editIndex=null;
-const box=document.getElementById("cars");
+/* عناصر */
+const imgInput = document.getElementById("img");
+const nameInput = document.getElementById("name");
+const priceInput = document.getElementById("price");
+const descInput = document.getElementById("desc");
+const carsBox = document.getElementById("cars");
+const formTitle = document.getElementById("formTitle");
 
-/* عرض */
+let cars = JSON.parse(localStorage.getItem("cars") || "[]");
+let editIndex = null;
+
+/* عرض السيارات */
 function render(){
- box.innerHTML="";
+ carsBox.innerHTML="";
  if(!cars.length){
-  box.innerHTML="<p style='opacity:.6'>🚗 لا توجد سيارات</p>";
+  carsBox.innerHTML="<p style='opacity:.6'>لا توجد سيارات</p>";
   return;
  }
  cars.forEach((c,i)=>{
-  box.innerHTML+=`
+  carsBox.innerHTML+=`
    <div class="card">
     <img src="${c.img}">
     <div class="info">
      <h4>${c.name}</h4>
-     <p>${c.desc}</p>
      <div class="price">${c.price}</div>
+     <p>${c.desc}</p>
      <div class="actions">
       <button class="edit" onclick="editCar(${i})">تعديل</button>
       <button class="delete" onclick="deleteCar(${i})">حذف</button>
@@ -144,18 +175,21 @@ function render(){
  });
 }
 
-/* حفظ (✅ الإصلاح هنا) */
+/* حفظ سيارة (✔ مصحّح) */
 function saveCar(){
- const name=nameInput.value.trim();
- const price=priceInput.value.trim();
- const desc=descInput.value.trim();
- const file=img.files[0];
+ const name = nameInput.value.trim();
+ const price = priceInput.value.trim();
+ const desc = descInput.value.trim();
+ const file = imgInput.files[0];
 
- if(!name||!price||!desc) return alert("أكمل الحقول");
+ if(!name || !price || !desc){
+  alert("أكمل جميع الحقول");
+  return;
+ }
 
- const save=(imgData)=>{
-  const baseCar={
-   img:imgData,
+ const save = (img)=>{
+  const car = {
+   img,
    name,
    price,
    desc,
@@ -163,64 +197,62 @@ function saveCar(){
    rates:[]
   };
 
-  if(editIndex!==null){
-   cars[editIndex]={...cars[editIndex],...baseCar};
+  if(editIndex !== null){
+   cars[editIndex] = car;
   }else{
-   cars.push(baseCar);
+   cars.push(car);
   }
 
-  localStorage.setItem("cars",JSON.stringify(cars));
-  reset(); render();
+  localStorage.setItem("cars", JSON.stringify(cars));
+  resetForm();
+  render();
  };
 
  if(file){
-  const r=new FileReader();
-  r.onload=()=>save(r.result);
-  r.readAsDataURL(file);
- }else if(editIndex!==null){
+  const reader = new FileReader();
+  reader.onload = () => save(reader.result);
+  reader.readAsDataURL(file);
+ }else if(editIndex !== null){
   save(cars[editIndex].img);
  }
 }
 
 /* تعديل */
 function editCar(i){
- editIndex=i;
- const c=cars[i];
- nameInput.value=c.name;
- priceInput.value=c.price;
- descInput.value=c.desc;
- formTitle.innerText="✏️ تعديل سيارة";
+ const c = cars[i];
+ editIndex = i;
+ nameInput.value = c.name;
+ priceInput.value = c.price;
+ descInput.value = c.desc;
+ formTitle.innerText = "✏️ تعديل سيارة";
 }
 
 /* حذف */
 function deleteCar(i){
  if(!confirm("حذف السيارة؟")) return;
  cars.splice(i,1);
- localStorage.setItem("cars",JSON.stringify(cars));
+ localStorage.setItem("cars", JSON.stringify(cars));
  render();
 }
 
 /* إعادة */
-function reset(){
- editIndex=null;
- formTitle.innerText="➕ إضافة سيارة";
+function resetForm(){
+ editIndex = null;
  nameInput.value="";
  priceInput.value="";
  descInput.value="";
- img.value="";
+ imgInput.value="";
+ formTitle.innerText="➕ إضافة سيارة";
 }
 
 /* تنقل */
-function goHome(){location.href="index.html"}
 function logout(){
  localStorage.removeItem("session");
  location.href="index.html";
 }
-
-/* عناصر */
-const nameInput=name;
-const priceInput=price;
-const descInput=desc;
+function goHome(){
+ location.href="gallery.html";
+}
 
 render();
 </script>
