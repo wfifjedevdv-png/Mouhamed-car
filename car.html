@@ -2,311 +2,109 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>تفاصيل السيارة</title>
 
 <style>
-:root{
- --bg1:#05070c;
- --bg2:#0b0f17;
- --blue:#1e90ff;
- --glass:rgba(255,255,255,.1);
- --border:rgba(255,255,255,.2);
-}
-
-*{box-sizing:border-box;font-family:Segoe UI,Tahoma}
-
-body{
- margin:0;
- min-height:100vh;
- background:linear-gradient(180deg,var(--bg1),var(--bg2));
- color:white;
-}
-
-/* HEADER */
-.header{
- position:fixed;
- top:0; right:0; left:0;
- height:56px;
- background:#020617;
- display:flex;
- align-items:center;
- justify-content:space-between;
- padding:0 16px;
- z-index:1000;
-}
-
-.cart-btn{
- position:relative;
- font-size:22px;
- cursor:pointer;
-}
-
-.cart-count{
- position:absolute;
- top:-6px;
- left:-6px;
- background:#ff4d4d;
- color:white;
- font-size:12px;
- padding:2px 6px;
- border-radius:999px;
-}
-
-/* CART PANEL */
-.cart-panel{
- position:fixed;
- top:56px;
- right:10px;
- width:300px;
- background:#0b0f17;
- border-radius:18px;
- padding:12px;
- display:none;
- z-index:1000;
-}
-
-.cart-item{
- display:flex;
- gap:10px;
- margin-bottom:10px;
-}
-
-.cart-item img{
- width:60px;
- height:60px;
- object-fit:cover;
- border-radius:10px;
-}
-
-.container{
- max-width:900px;
- margin:auto;
- padding:80px 20px 20px;
-}
-
-.back{
- background:none;
- border:none;
- color:var(--blue);
- cursor:pointer;
- font-size:16px;
- margin-bottom:14px;
-}
-
-.card{
- background:var(--glass);
- backdrop-filter:blur(14px);
- border-radius:26px;
- padding:18px;
- border:1px solid var(--border);
-}
-
-.card img{
- width:100%;
- height:360px;
- object-fit:cover;
- border-radius:22px;
-}
-
-.price{
- color:var(--blue);
- font-size:22px;
- font-weight:bold;
- margin-bottom:10px;
-}
-
-/* STARS */
-.stars span{
- font-size:30px;
- cursor:pointer;
- color:#555;
-}
+body{margin:0;background:#05070c;color:white;font-family:Segoe UI}
+.header{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#020617}
+.cart-btn{font-size:22px;cursor:pointer}
+.container{max-width:900px;margin:auto;padding:20px}
+.card{background:rgba(255,255,255,.1);border-radius:24px;padding:20px}
+.card img{width:100%;height:320px;object-fit:cover;border-radius:20px}
+.price{color:#1e90ff;font-size:22px;font-weight:bold}
+button{margin-top:12px;padding:12px;width:100%;border:none;border-radius:14px;background:#1e90ff;color:white}
+.stars span{font-size:26px;cursor:pointer;color:#555}
 .stars span.active{color:gold}
-
-.comment{
- background:rgba(255,255,255,.08);
- padding:12px;
- border-radius:14px;
- margin-top:10px;
-}
-
-input,textarea,button{
- width:100%;
- margin-top:12px;
- padding:12px;
- border-radius:14px;
- border:none;
- background:#0f1420;
- color:white;
-}
-
-button.send{
- background:linear-gradient(135deg,#1e90ff,#3aa0ff);
- cursor:pointer;
-}
+.comment{background:rgba(255,255,255,.08);padding:10px;border-radius:12px;margin-top:8px}
 </style>
 </head>
 
 <body>
 
 <div class="header">
- <h3>🚗 معرض السيارات</h3>
- <div class="cart-btn" onclick="toggleCart()">🛒
-  <span class="cart-count" id="cartCount">0</span>
- </div>
-</div>
-
-<div class="cart-panel" id="cartPanel">
- <h4>🛒 عربة التسوق</h4>
- <div id="cartList"></div>
+ <b>🚗 التفاصيل</b>
+ <span class="cart-btn" onclick="addToCart()">🛒</span>
 </div>
 
 <div class="container">
-<button class="back" onclick="goBack()">⬅ الرجوع</button>
+ <div class="card">
+  <img id="img">
+  <h2 id="name"></h2>
+  <div class="price" id="price"></div>
+  <p id="desc"></p>
 
-<div class="card">
- <img id="img">
- <h2 id="name"></h2>
- <div class="price" id="price"></div>
- <p id="desc"></p>
+  <h3>⭐ التقييم</h3>
+  <div class="stars" id="stars"></div>
+  <div id="avg"></div>
 
- <button class="send" onclick="addToCart()">🛒 إضافة إلى العربة</button>
+  <h3>💬 التعليقات</h3>
+  <input id="cname" placeholder="اسمك">
+  <textarea id="ctext" placeholder="تعليقك"></textarea>
+  <button onclick="addComment()">إرسال</button>
 
- <hr style="opacity:.2">
-
- <h3>⭐ التقييم</h3>
- <div class="stars" id="stars"></div>
- <div id="avg"></div>
-
- <hr style="opacity:.2">
-
- <h3>💬 التعليقات</h3>
- <input id="cname" placeholder="اسمك">
- <textarea id="ctext" placeholder="اكتب تعليقك"></textarea>
- <button class="send" onclick="addComment()">إرسال</button>
- <div id="comments"></div>
-</div>
+  <div id="comments"></div>
+ </div>
 </div>
 
 <script>
-if(!localStorage.getItem("session")) location.href="index.html";
-
 const cars = JSON.parse(localStorage.getItem("cars")||"[]");
-const i = localStorage.getItem("currentCar");
-const car = cars[i];
+const id = Number(localStorage.getItem("currentCarId"));
+const car = cars.find(c=>c.id===id);
+
+if(!car){document.body.innerHTML="🚫 خطأ";throw"";}
+
+img.src=car.img;
+name.innerText=car.name;
+price.innerText=car.price;
+desc.innerText=car.desc;
 
 car.comments ||= [];
 car.rates ||= [];
 
-img.src = car.img;
-name.innerText = car.name;
-price.innerText = car.price;
-desc.innerText = car.desc;
-
-/* ⭐ التقييم */
-for(let x=1;x<=5;x++){
- stars.innerHTML += `<span onclick="rate(${x})">★</span>`;
+for(let i=1;i<=5;i++){
+ stars.innerHTML+=`<span onclick="rate(${i})">★</span>`;
 }
-updateStars();
 
 function rate(n){
  car.rates.push(n);
  save();
- updateStars();
+ renderStars();
 }
 
-function updateStars(){
- let avgNum = car.rates.length
- ? car.rates.reduce((a,b)=>a+b)/car.rates.length : 0;
- avg.innerText = avgNum ? `متوسط التقييم ${avgNum.toFixed(1)} ⭐` : "لا يوجد تقييم";
- [...stars.children].forEach((s,i)=>{
-  s.classList.toggle("active", i < Math.round(avgNum));
- });
-}
-
-/* 💬 تعليقات */
-function renderComments(){
- comments.innerHTML="";
- if(!car.comments.length){
-  comments.innerHTML="<p style='opacity:.6'>لا توجد تعليقات</p>";
-  return;
- }
- car.comments.forEach(c=>{
-  comments.innerHTML+=`
-   <div class="comment">
-    <b>${c.name}</b>
-    <small> • ${c.time}</small>
-    <p>${c.text}</p>
-   </div>`;
- });
+function renderStars(){
+ let avg=car.rates.length?car.rates.reduce((a,b)=>a+b)/car.rates.length:0;
+ avgDiv.innerText=avg?`متوسط ${avg.toFixed(1)}`:"";
+ [...stars.children].forEach((s,i)=>s.classList.toggle("active",i<avg));
 }
 
 function addComment(){
- if(!cname.value||!ctext.value) return;
- car.comments.push({
-  name:cname.value,
-  text:ctext.value,
-  time:new Date().toLocaleString()
- });
- cname.value=""; ctext.value="";
- save(); renderComments();
+ car.comments.push({name:cname.value,text:ctext.value});
+ save();
+ renderComments();
 }
 
-/* 🛒 العربة */
-function cartKey(){
- return "cart_"+JSON.parse(localStorage.getItem("session")).email;
+function renderComments(){
+ comments.innerHTML="";
+ car.comments.forEach(c=>{
+  comments.innerHTML+=`<div class="comment"><b>${c.name}</b><p>${c.text}</p></div>`;
+ });
 }
 
 function addToCart(){
- let cart = JSON.parse(localStorage.getItem(cartKey())||"[]");
- if(cart.find(x=>x.id==i)) return alert("🚫 موجودة مسبقًا");
- cart.push({
-  id:i,
-  name:car.name,
-  price:car.price,
-  img:car.img
- });
- localStorage.setItem(cartKey(),JSON.stringify(cart));
- updateCart();
-}
-
-function toggleCart(){
- cartPanel.style.display =
- cartPanel.style.display==="block"?"none":"block";
- updateCart();
-}
-
-function updateCart(){
- let cart = JSON.parse(localStorage.getItem(cartKey())||"[]");
- cartCount.innerText = cart.length;
- cartList.innerHTML="";
- if(!cart.length){
-  cartList.innerHTML="<p style='opacity:.6'>العربة فارغة</p>";
-  return;
- }
- cart.forEach(c=>{
-  cartList.innerHTML+=`
-   <div class="cart-item">
-    <img src="${c.img}">
-    <div>
-     <div>${c.name}</div>
-     <div class="price">${c.price}</div>
-    </div>
-   </div>`;
- });
+ let key="cart_user";
+ let cart=JSON.parse(localStorage.getItem(key)||"[]");
+ if(cart.find(x=>x.id===car.id)) return alert("موجودة");
+ cart.push(car);
+ localStorage.setItem(key,JSON.stringify(cart));
+ alert("✅ أضيفت");
 }
 
 function save(){
  localStorage.setItem("cars",JSON.stringify(cars));
 }
 
+renderStars();
 renderComments();
-updateCart();
-
-function goBack(){
- location.href="gallery.html";
-}
 </script>
 
 </body>
